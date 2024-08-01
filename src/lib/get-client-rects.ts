@@ -1,5 +1,4 @@
 import type { LTWHP, Page } from "../types.js";
-
 import optimizeClientRects from "./optimize-client-rects";
 
 const isClientRectInsidePageRect = (clientRect: DOMRect, pageRect: DOMRect) => {
