@@ -2,15 +2,16 @@ import "pdfjs-dist/web/pdf_viewer.css";
 import "../style/pdf_viewer.css";
 import "../style/PdfHighlighter.css";
 
-import debounce from "debounce";
-import type { PDFDocumentProxy } from "pdfjs-dist";
-import type { EventBus, PDFViewer } from "pdfjs-dist/legacy/web/pdf_viewer.mjs";
 import React, {
   type PointerEventHandler,
   PureComponent,
   type RefObject,
 } from "react";
-import { type Root, createRoot } from "react-dom/client";
+import { createRoot, type Root } from "react-dom/client";
+import { debounce } from "@fabricode-foundation/utils";
+import type { PDFDocumentProxy } from "pdfjs-dist";
+import type { EventBus, PDFViewer } from "pdfjs-dist/legacy/web/pdf_viewer.mjs";
+
 import { scaledToViewport, viewportToScaled } from "../lib/coordinates";
 import getAreaAsPng from "../lib/get-area-as-png";
 import getBoundingRect from "../lib/get-bounding-rect";
@@ -102,6 +103,7 @@ export class PdfHighlighter<T_HT extends IHighlight> extends PureComponent<
   };
 
   viewer!: PDFViewer;
+  eventBus!: EventBus;
 
   resizeObserver: ResizeObserver | null = null;
   containerNode?: HTMLDivElement | null = null;
@@ -165,9 +167,9 @@ export class PdfHighlighter<T_HT extends IHighlight> extends PureComponent<
     const { pdfDocument } = this.props;
     const pdfjs = await import("pdfjs-dist/web/pdf_viewer.mjs");
 
-    const eventBus = new pdfjs.EventBus();
+    this.eventBus = this.eventBus || new pdfjs.EventBus();
     const linkService = new pdfjs.PDFLinkService({
-      eventBus,
+      eventBus: this.eventBus,
       externalLinkTarget: 2,
     });
 
@@ -179,7 +181,7 @@ export class PdfHighlighter<T_HT extends IHighlight> extends PureComponent<
       this.viewer ||
       new pdfjs.PDFViewer({
         container: this.containerNodeRef.current,
-        eventBus: eventBus,
+        eventBus: this.eventBus,
         // enhanceTextSelection: true, // deprecated. https://github.com/mozilla/pdf.js/issues/9943#issuecomment-409369485
         textLayerMode: 2,
         removePageBorders: true,
@@ -190,7 +192,7 @@ export class PdfHighlighter<T_HT extends IHighlight> extends PureComponent<
     linkService.setViewer(this.viewer);
     this.viewer.setDocument(pdfDocument);
 
-    this.attachRef(eventBus);
+    this.attachRef(this.eventBus);
   }
 
   componentWillUnmount() {
